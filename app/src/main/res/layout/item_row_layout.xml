@@ -19,7 +19,6 @@
         android:textAlignment="gravity"
         android:layout_alignTop="@id/ic_item"
         android:layout_toEndOf="@id/ic_item"
-        android:layout_toStartOf="@id/number_timeLeft"
         />
 
     <TextView
@@ -54,7 +53,7 @@
         android:textAlignment="center"
         android:layout_alignEnd="@id/number_timeLeft"
         android:layout_alignBottom="@id/shop_name"
-        android:layout_alignStart="@+id/number_timeLeft"
+        android:layout_alignStart="@id/number_timeLeft"
         />
 
 </RelativeLayout>
