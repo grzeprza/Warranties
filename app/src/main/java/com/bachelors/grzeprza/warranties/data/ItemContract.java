@@ -29,7 +29,8 @@ public final class ItemContract {
         public final static String COLUMN_SHOP_ID = "shop_id";
     }
 
-    static final class ItemTypes
+    /**Represents ITEM TYPES*/
+    public static final class ItemTypes
     {
         public final static int OTHER = 0;
         public final static int ELECTRONIC = 1;

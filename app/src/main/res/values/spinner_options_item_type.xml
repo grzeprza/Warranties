@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="item_types">
+        <item>Select</item>
+        <item>Electronic</item>
+        <item>Fashion</item>
+        <item>House</item>
+        <item>Sport</item>
+        <item>Motorization</item>
+        <item>Garden</item>
+        <item>Other</item>
+    </string-array>
+</resources>

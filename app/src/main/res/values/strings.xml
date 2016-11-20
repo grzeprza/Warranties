@@ -5,4 +5,22 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
+
+    <!-- Names corresponding to database. In use in EditorsActivity -->
+    <string name="label_item_name">Name item:</string>
+    <string name="label_item_price">Price:</string>
+    <string name="label_item_photo">Item photo:</string>
+    <string name="label_item_receipt_photo">Receipt photo:</string>
+    <string name="label_item_bought_date">Bought on </string>
+    <string name="label_item_type">Item type:</string>
+    <string name="label_item_warranty_duration">Warranty ends on </string>
+    <string name="label_shop_name">Shop name:</string>
+    <string name="warranty_duration">Warranty Duration</string>
+    <string name="label_weeks">weeks</string>
+    <string name="label_currency">$</string>
+    <string name="fe_name_item">f.e. T-Shirt XL with pony</string>
+    <string name="fe_shop_name"><![CDATA[f.e. H&M]]></string>
+    <string name="fe_item_price">f.e. 150</string>
+    <string name="fe_bought_date">f.e. 10-12-2013</string>
+    <string name="fe_warranty_duration">f.e. 4</string>
 </resources>
