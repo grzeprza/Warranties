@@ -21,8 +21,8 @@ public final class ItemContract {
         public final static String _ID = BaseColumns._ID;
         public final static String COLUMN_ITEM_NAME = "item_name";
         public final static String COLUMN_ITEM_PRICE = "item_price";
-        public final static String COLUMN_ITEM_PHOTO = "item_photo";
-        public final static String COLUMN_ITEM_RECEIPT_PHOTO = "item_receipt_photo";
+        public final static String COLUMN_ITEM_PHOTO_URI = "item_photo_uri";
+        public final static String COLUMN_ITEM_RECEIPT_PHOTO_URI = "item_receipt_photo_uri";
         public final static String COLUMN_BOUGHT_DATE = "bought_date";
         public final static String COLUMN_ITEM_TYPE = "item_type";
         public final static String COLUMN_WARRANTY_DURATION = "warranty_duration"; //in weeks
