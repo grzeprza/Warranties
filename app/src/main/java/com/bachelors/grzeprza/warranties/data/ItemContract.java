@@ -14,7 +14,7 @@ public final class ItemContract {
     private ItemContract(){}
 
     /**Represents ITEMS table*/
-    static final class ItemEntry implements BaseColumns
+    public static final class ItemEntry implements BaseColumns
     {
         public final static String TABLE_NAME = "items";
 
@@ -26,7 +26,7 @@ public final class ItemContract {
         public final static String COLUMN_BOUGHT_DATE = "bought_date";
         public final static String COLUMN_ITEM_TYPE = "item_type";
         public final static String COLUMN_WARRANTY_DURATION = "warranty_duration"; //in weeks
-        public final static String COLUMN_SHOP_ID = "shop_id";
+        public final static String COLUMN_SHOP_NAME = "shop_name";
     }
 
     /**Represents ITEM TYPES*/
@@ -39,15 +39,5 @@ public final class ItemContract {
         public final static int SPORT = 4;
         public final static int MOTORIZATION = 5;
         public final static int GARDEN = 6;
-    }
-
-    /**Represents SHOP table*/
-    static final class ShopEntry implements BaseColumns
-    {
-        public final static String TABLE_NAME = "shop";
-
-        public final static String _ID = BaseColumns._ID;
-        public final static String COLUMN_SHOP_NAME = "shop_name";
-        public final static String COLUMN_ITEM_COUNT = "item_count";
     }
 }

@@ -8,4 +8,9 @@
         android:icon="@android:drawable/ic_menu_save"
         android:title="Save"
         app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/button_cancel"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:title="Cancel"
+        app:showAsAction="ifRoom"/>
 </menu>

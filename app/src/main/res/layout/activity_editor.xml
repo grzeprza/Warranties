@@ -81,7 +81,7 @@
                 android:id="@+id/edit_text_item_price"
                 android:hint="@string/fe_item_price"
                 android:textColorHint="@color/colorPrimaryDark"
-                android:inputType="number"
+                android:inputType="numberDecimal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
@@ -212,6 +212,7 @@
                 android:layout_height="wrap_content" />
 
             <EditText
+                android:id="@+id/edit_text_warranty_duration"
                 android:inputType="number"
                 android:hint= "@string/fe_warranty_duration"
                 android:textColorHint="@color/colorPrimaryDark"
@@ -223,11 +224,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </LinearLayout>
-
-        <ImageView
-            android:id="@+id/imageView_tempImg"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
     </LinearLayout>
 
 </RelativeLayout>

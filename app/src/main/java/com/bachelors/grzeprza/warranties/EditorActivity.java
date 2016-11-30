@@ -1,7 +1,9 @@
 package com.bachelors.grzeprza.warranties;
 
 import android.app.DatePickerDialog;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
@@ -24,14 +26,18 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
+import com.bachelors.grzeprza.warranties.data.ItemContract;
 import com.bachelors.grzeprza.warranties.data.ItemContract.ItemTypes;
+import com.bachelors.grzeprza.warranties.data.ItemDbHelper;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Random;
 
 public class EditorActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener{
 
@@ -67,13 +73,17 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
      *Value FALSE means itemReceiptImageFile*/
     private boolean chooseItemCapture;
 
-    /**Just to check whether it is stored*/
-    private ImageView mTempImageView;
+    /**Future icon to take item picture*/
     private Button buttonTakeItemPhoto;
+    /**Taken item photo URI*/
     private Uri takenItemFileUri;
+    /**Taken receipt photo URI*/
     private Uri takenReceiptFileUri;
+    /**Future icon to take receipt picture*/
     private Button buttonTakeReceiptPhoto;
+    /**Temporary button to show stored item picture*/
     private Button btnShowItem;
+    /**Temporart button to show stored receipt picture*/
     private Button btnShowReceipt;
 
     @Override
@@ -95,6 +105,7 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
             }
         });
 
+        //pinned button to take receipt item picture
         buttonTakeReceiptPhoto = (Button) findViewById(R.id.button_item_receipt_photo);
         buttonTakeReceiptPhoto.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -104,6 +115,8 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
             }
         });
 
+        //pinned partly temporary files to show taken pictures in new intent.
+        //at the beggining invisible.
         btnShowItem = (Button) findViewById(R.id.button_showPhoto);
         btnShowItem.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -114,6 +127,9 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
             }
         });
 
+
+        //pinned partly temporary files to show receipt taken pictures in new intent.
+        //at the beggining invisible.
         btnShowReceipt = (Button) findViewById(R.id.button_showReceiptPhoto);
         btnShowReceipt.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -152,6 +168,7 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         //Ensure that there is camera activity to handle the intent
         if(takePictureIntent.resolveActivity(getPackageManager()) != null)
         {
+            //chooses which item or receipt user wants to capture. Action done for later saving to database.
             if(chooseItemCapture)
             {
                 takenItemFileUri = getOutputMediaFileUri(REQUEST_IMAGE_CAPTURE);
@@ -166,19 +183,17 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         }
     }
 
+    /**Helper method that gets Uri for given file. Type may be used when capturing image to divide code(DRY)*/
     public Uri getOutputMediaFileUri(int type) {
         return Uri.fromFile(getOutputMediaFile(type));
     }
 
-    /*
-     * returning image
-     */
+    /**Method creates and returns file for image. Type may be used when capturing image to divide code(DRY)*/
     private static File getOutputMediaFile(int type) {
 
-        // External sdcard location
+        // External location
         File mediaStorageDir = new File(
-                Environment
-                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
                 IMAGE_DIRECTORY_NAME);
 
         // Create the storage directory if it does not exist
@@ -203,7 +218,8 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
     /**Handles result of startActivityForResult( Bitmap, REQUEST TYPE)*/
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        //Log.i("onActivityResult", "RequestCode:"+requestCode + ", ResultCode:" + resultCode);
+
+        //if everything is all right, set approriate button to enable seeing taken image.
         if(requestCode == REQUEST_CAPTURE_IMAGE_CODE && resultCode == RESULT_OK)
         {
            Log.i("onActivityResult", "Taking picture: successful");
@@ -223,18 +239,100 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         }
     }
 
-    /**Method handles toolbar actions - save*/
+    /**Method handles toolbar actions - save, cancel*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId())
         {
             case R.id.button_ok_save:
-                //add save action
+
+                //if all field are filled properly then move on to main else inform user
+                if(insertItem())
+                {
+                    //ends activity
+                    finish();
+                }
+                else
+                {
+                    Toast.makeText(getApplicationContext(),"Please fill apropriate data upon",Toast.LENGTH_LONG).show();
+                }
+
+                return true;
+
+            case R.id.button_cancel:
                 return true;
 
             //if user action was not recognized.
             default: return super.onOptionsItemSelected(item);
         }
+    }
+
+    /**Inserts inputted data to database. User has to fill all informations.*/
+    private boolean insertItem() {
+        //Get Item Name from EditText and checks whether it was filled
+        EditText editText_itemName = (EditText) findViewById(R.id.edit_text_item_name);
+        String itemName = editText_itemName.getText().toString().trim();
+        if(itemName.isEmpty()) return false;
+
+        //Gets Shop Name from EditText and checks whether it was filled
+        EditText editText_shopName = (EditText) findViewById(R.id.edit_text_shop_name);
+        String shopName = editText_shopName.getText().toString().trim();
+        if(shopName.isEmpty()) return false;
+
+        //Gets Item Price and checks whether it was filled correctly
+        EditText editText_itemPrice = (EditText) findViewById(R.id.edit_text_item_price);
+        String itemPriceString = editText_itemPrice.getText().toString().trim();
+        if(itemPriceString.isEmpty()) return false;
+        float itemPrice = Float.valueOf(itemPriceString);
+        if(itemPrice <= 0.0) return false;
+
+        //Check whether item photo was taken
+        if(takenItemFileUri== null) return false;
+        String itemPhotoUri = takenItemFileUri.toString();
+
+        //checks whether item receipt photo was taken
+        if(takenReceiptFileUri==null) return false;
+        String receiptPhotoUri = takenReceiptFileUri.toString();
+
+        //Gets item type selected by user
+        if(mItemType<0) return false;
+
+        //Get bought date
+        EditText editText_boughtDate = (EditText) findViewById(R.id.edit_text_bought_date);
+        String boughtDate = editText_boughtDate.getText().toString().trim();
+        if(boughtDate.isEmpty()) return false;
+
+        //Get warranty duration in weeks
+        EditText editText_warrantyDuration = (EditText) findViewById(R.id.edit_text_warranty_duration);
+        String warrantyDurationString = editText_warrantyDuration.getText().toString().trim();
+        if(warrantyDurationString.isEmpty()) return false;
+        int warrantyDuration = Integer.valueOf(warrantyDurationString);
+
+        ItemDbHelper dbHelper = new ItemDbHelper(getApplicationContext());
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(ItemContract.ItemEntry.COLUMN_ITEM_NAME,itemName);
+        values.put(ItemContract.ItemEntry.COLUMN_ITEM_PRICE,itemPrice);
+        values.put(ItemContract.ItemEntry.COLUMN_BOUGHT_DATE,boughtDate);
+        values.put(ItemContract.ItemEntry.COLUMN_SHOP_NAME,shopName);
+        values.put(ItemContract.ItemEntry.COLUMN_WARRANTY_DURATION,warrantyDuration);
+        values.put(ItemContract.ItemEntry.COLUMN_ITEM_PHOTO_URI,itemPhotoUri);
+        values.put(ItemContract.ItemEntry.COLUMN_ITEM_RECEIPT_PHOTO_URI,receiptPhotoUri);
+        values.put(ItemContract.ItemEntry.COLUMN_ITEM_TYPE, mItemType);
+
+        long addedRowId = db.insert(ItemContract.ItemEntry.TABLE_NAME,null,values);
+
+        if(addedRowId == -1)
+        {
+            Toast.makeText(getApplicationContext(),"Error with saving item", Toast.LENGTH_LONG).show();
+        }
+        else
+        {
+            Toast.makeText(getApplicationContext(),"Item Saved at: " + Long.valueOf(addedRowId), Toast.LENGTH_LONG).show();
+        }
+
+        return true;
     }
 
     /**Create DatePickerDialog for Bought Date*/

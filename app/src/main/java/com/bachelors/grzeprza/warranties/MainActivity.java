@@ -1,7 +1,11 @@
 package com.bachelors.grzeprza.warranties;
 
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.view.View;
@@ -13,6 +17,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
+import com.bachelors.grzeprza.warranties.data.ItemContract;
+import com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry;
+import com.bachelors.grzeprza.warranties.data.ItemDbHelper;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.util.Random;
+
+import static com.bachelors.grzeprza.warranties.EditorActivity.IMAGE_DIRECTORY_NAME;
+import static com.bachelors.grzeprza.warranties.data.ItemDbHelper.DATABASE_NAME;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -30,6 +49,7 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 Intent intent = new Intent(getApplicationContext(), EditorActivity.class);
                 startActivity(intent);
+
             }
         });
 
@@ -41,6 +61,24 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+
+    }
+    /**Toasts ({@link android.widget.Toast}) message about current number of rows in database*/
+    private void displayInfo() {
+        ItemDbHelper db = new ItemDbHelper(getApplicationContext());
+
+        SQLiteDatabase sdb = db.getReadableDatabase();
+
+        Cursor cursor = sdb.rawQuery("SELECT * FROM " + ItemContract.ItemEntry.TABLE_NAME, null);
+        try{
+            int number = cursor.getCount();
+
+            Toast.makeText(this ,String.valueOf(number), Toast.LENGTH_LONG).show();
+        }
+        finally {
+            cursor.close();
+        }
     }
 
     @Override
@@ -74,6 +112,34 @@ public class MainActivity extends AppCompatActivity
 
             case R.id.action_search_main:
                 //looks for item in list
+                //for test purposes diplays number of rows in database
+                return true;
+
+            case R.id.action_insert_dummy_data:
+
+                ItemDbHelper dbHelper = new ItemDbHelper(getApplicationContext());
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+                Random random = new Random();
+                float price= random.nextFloat();
+                int duration = random.nextInt(10)+1;
+
+                ContentValues values = new ContentValues();
+                values.put(ItemEntry.COLUMN_ITEM_NAME,"");
+                values.put(ItemEntry.COLUMN_ITEM_PRICE,price);
+                values.put(ItemEntry.COLUMN_BOUGHT_DATE,"28-11-16");
+                values.put(ItemEntry.COLUMN_SHOP_NAME,"Sklep" + String.valueOf(random.nextInt()));
+                values.put(ItemEntry.COLUMN_WARRANTY_DURATION,duration);
+                values.put(ItemEntry.COLUMN_ITEM_PHOTO_URI,"zdje.jpg");
+                values.put(ItemEntry.COLUMN_ITEM_RECEIPT_PHOTO_URI,"zdje.jpg");
+                values.put(ItemEntry.COLUMN_ITEM_TYPE, ItemContract.ItemTypes.ELECTRONIC);
+
+                db.insert(ItemEntry.TABLE_NAME,null,values);
+                displayInfo();
+
+                return true;
+
+            case R.id.action_delete_data:
                 return true;
 
             default: return super.onOptionsItemSelected(item);
