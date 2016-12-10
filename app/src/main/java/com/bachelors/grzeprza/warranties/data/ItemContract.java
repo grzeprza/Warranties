@@ -4,6 +4,7 @@ package com.bachelors.grzeprza.warranties.data;
  * Created by grzeprza on 03.11.2016.
  */
 
+import android.net.Uri;
 import android.provider.BaseColumns;
 
 /**
@@ -11,13 +12,28 @@ import android.provider.BaseColumns;
  **/
 public final class ItemContract {
 
+    /**Unables to create instance of Item Contract*/
     private ItemContract(){}
+
+    /**Represents authority needed for provider in Manifest file.*/
+    public static final String CONTENT_AUTHORITY = "com.bachelors.grzeprza.warranties";
+
+    /**Represents base URI for Warranties app.*/
+    public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
+
+    /**Represents table name. If more tables needed then access would be easier.*/
+    public static final String PATH_ITEM = "items";
 
     /**Represents ITEMS table*/
     public static final class ItemEntry implements BaseColumns
     {
+        /**Content URI for Item table*/
+        public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, PATH_ITEM);
+
+        /**Name of the database*/
         public final static String TABLE_NAME = "items";
 
+        //Below you can see columns in table items
         public final static String _ID = BaseColumns._ID;
         public final static String COLUMN_ITEM_NAME = "item_name";
         public final static String COLUMN_ITEM_PRICE = "item_price";

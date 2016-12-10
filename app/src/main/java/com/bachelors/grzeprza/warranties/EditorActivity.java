@@ -39,6 +39,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Random;
 
+import static com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry.CONTENT_URI;
+
 public class EditorActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener{
 
     /**Tag for Log messages*/
@@ -260,6 +262,7 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
                 return true;
 
             case R.id.button_cancel:
+                finish();
                 return true;
 
             //if user action was not recognized.
@@ -308,9 +311,6 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         if(warrantyDurationString.isEmpty()) return false;
         int warrantyDuration = Integer.valueOf(warrantyDurationString);
 
-        ItemDbHelper dbHelper = new ItemDbHelper(getApplicationContext());
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-
         ContentValues values = new ContentValues();
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_NAME,itemName);
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_PRICE,itemPrice);
@@ -321,16 +321,12 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_RECEIPT_PHOTO_URI,receiptPhotoUri);
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_TYPE, mItemType);
 
-        long addedRowId = db.insert(ItemContract.ItemEntry.TABLE_NAME,null,values);
+        Uri addedRowId = getContentResolver().insert(ItemContract.ItemEntry.CONTENT_URI,values);
 
-        if(addedRowId == -1)
-        {
-            Toast.makeText(getApplicationContext(),"Error with saving item", Toast.LENGTH_LONG).show();
-        }
+        if(addedRowId == null)
+            Toast.makeText(getApplicationContext(),"Failed to save, try again.",Toast.LENGTH_SHORT).show();
         else
-        {
-            Toast.makeText(getApplicationContext(),"Item Saved at: " + Long.valueOf(addedRowId), Toast.LENGTH_LONG).show();
-        }
+            Toast.makeText(getApplicationContext(),"Item saved",Toast.LENGTH_SHORT).show();
 
         return true;
     }
