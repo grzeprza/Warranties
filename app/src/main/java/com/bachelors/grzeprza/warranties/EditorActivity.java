@@ -93,6 +93,14 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editor);
 
+       Intent intent = getIntent();
+        Uri currentItemUri = intent.getData();
+        if(currentItemUri != null)
+        {
+            this.setTitle("Warranties \\ Edit");
+        }
+        else this.setTitle("Warranties \\ Add Item");
+
         configureOptionSpinnerForItemtypes();
 
         configureDatePickerDialogForBoughtDate();

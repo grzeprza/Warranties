@@ -26,7 +26,6 @@
         </activity>
         <activity
             android:name=".EditorActivity"
-            android:label="Warranties/Editor"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data

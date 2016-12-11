@@ -3,4 +3,6 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="itemName">#2e2828</color>
+    <color name="warrantyTimeLeft">#2e2828</color>
 </resources>
