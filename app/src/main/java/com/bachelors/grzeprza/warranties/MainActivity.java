@@ -3,6 +3,7 @@ package com.bachelors.grzeprza.warranties;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -10,6 +11,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.Loader;
+import android.support.v7.app.AlertDialog;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -53,6 +57,7 @@ public class MainActivity extends AppCompatActivity
     /**Instance of {@link ItemCursorAdapter}*/
     ItemCursorAdapter itemCursorAdapter;
 
+    /**Initializes whole world.*/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,6 +104,32 @@ public class MainActivity extends AppCompatActivity
                 Intent displayItemInDetail = new Intent(getApplicationContext(), EditorActivity.class);
                 displayItemInDetail.setData(ContentUris.withAppendedId(CONTENT_URI,id));
                 startActivity(displayItemInDetail);
+            }
+        });
+        itemListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                /*LayoutInflater layoutInflater = getLayoutInflater();
+                AlertDialog builder = new AlertDialog.Builder(getApplicationContext()).create();
+                builder.setMessage("Are you sure to you want to remove this item?");
+                builder.setCancelable(false);
+                builder.setButton(AlertDialog.BUTTON_POSITIVE,"YES!", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        getContentResolver().delete(CONTENT_URI,null,null);
+                        Toast.makeText(getApplicationContext(), "Item removed.",Toast.LENGTH_SHORT).show();
+                    }
+                });
+                builder.setButton(AlertDialog.BUTTON_NEGATIVE,"NO", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //do nothing
+                    }
+                });
+                builder.show();*/
+                getContentResolver().delete(ContentUris.withAppendedId(CONTENT_URI,id),null,null);
+                Toast.makeText(MainActivity.this, "Item removed.", Toast.LENGTH_SHORT).show();
+                return false;
             }
         });
         itemCursor.close();
@@ -232,7 +263,6 @@ public class MainActivity extends AppCompatActivity
         client.disconnect();
     }
 
-
     /**Describes what query has to be done at the LoaderManager call*/
     @Override
     public android.content.Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -245,6 +275,7 @@ public class MainActivity extends AppCompatActivity
                         null,
                         null);
     }
+
     /**Changes old cursor to new one*/
     @Override
     public void onLoadFinished(android.content.Loader<Cursor> loader, Cursor data) {
@@ -255,4 +286,6 @@ public class MainActivity extends AppCompatActivity
     public void onLoaderReset(android.content.Loader<Cursor> loader) {
         itemCursorAdapter.swapCursor(null);
     }
+
+
 }

@@ -3,11 +3,14 @@ package com.bachelors.grzeprza.warranties;
 import android.app.DatePickerDialog;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.Loader;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.LoaderManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -41,7 +44,7 @@ import java.util.Random;
 
 import static com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry.CONTENT_URI;
 
-public class EditorActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener{
+public class EditorActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener, android.app.LoaderManager.LoaderCallbacks<Cursor>{
 
     /**Tag for Log messages*/
     private final String LOG_TAG = getClass().getSimpleName();
@@ -88,6 +91,14 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
     /**Temporart button to show stored receipt picture*/
     private Button btnShowReceipt;
 
+    /**When goes to {@link EditorActivity} and wants to edit selected Item.*/
+    private boolean editMode = false;
+
+    /**Identifies loader being used to load specific item into {@link EditorActivity}.*/
+    private static final int SELECTED_ITEM_LOADER = 1;
+
+    private Uri SELECTED_ITEM_URI;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,9 +108,14 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         Uri currentItemUri = intent.getData();
         if(currentItemUri != null)
         {
-            this.setTitle("Warranties \\ Edit");
+            editMode = true;
+            this.setTitle("Edit");
+            //Log.i(LOG_TAG, currentItemUri.toString());
+            SELECTED_ITEM_URI = currentItemUri;
         }
-        else this.setTitle("Warranties \\ Add Item");
+        else this.setTitle("Add Item");
+
+        //TODO: implement behavior depending on source click [Edit] or [Add item]
 
         configureOptionSpinnerForItemtypes();
 
@@ -151,6 +167,8 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         });
 
         addToolbarAndConfigure();
+
+        if(editMode) getLoaderManager().initLoader(SELECTED_ITEM_LOADER, null, this);
     }
 
     /**Adds toolbar and sets back arrow button*/
@@ -278,7 +296,7 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         }
     }
 
-    /**Inserts inputted data to database. User has to fill all informations.*/
+    /**Depends on EDIT MODE. Inserts inputted data to database or updates loaded.*/
     private boolean insertItem() {
         //Get Item Name from EditText and checks whether it was filled
         EditText editText_itemName = (EditText) findViewById(R.id.edit_text_item_name);
@@ -329,12 +347,25 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_RECEIPT_PHOTO_URI,receiptPhotoUri);
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_TYPE, mItemType);
 
-        Uri addedRowId = getContentResolver().insert(ItemContract.ItemEntry.CONTENT_URI,values);
 
-        if(addedRowId == null)
-            Toast.makeText(getApplicationContext(),"Failed to save, try again.",Toast.LENGTH_SHORT).show();
-        else
-            Toast.makeText(getApplicationContext(),"Item saved",Toast.LENGTH_SHORT).show();
+        if(!editMode) {
+            //INSERT
+            Uri addedRowId = getContentResolver().insert(ItemContract.ItemEntry.CONTENT_URI, values);
+            if(addedRowId == null)
+                Toast.makeText(getApplicationContext(),"Failed to save, try again.",Toast.LENGTH_SHORT).show();
+            else
+                Toast.makeText(getApplicationContext(),"Item saved",Toast.LENGTH_SHORT).show();
+
+        }
+        else {
+             //UPDATE
+            int updatedRowId = getContentResolver().update(SELECTED_ITEM_URI, values,null,null);
+            if(updatedRowId == 0)
+                Toast.makeText(getApplicationContext(),"No rows updated",Toast.LENGTH_SHORT).show();
+            else
+                Toast.makeText(getApplicationContext(),"Item updated",Toast.LENGTH_SHORT).show();
+        }
+
 
         return true;
     }
@@ -410,5 +441,98 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
         mItemType = -1;
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new android.content.CursorLoader(
+                this,
+                SELECTED_ITEM_URI,
+                null,
+                null,
+                null,
+                null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        //Load data from Cursor
+       if(data.moveToFirst())
+       {
+            String itemName = data.getString(data.getColumnIndex(ItemContract.ItemEntry.COLUMN_ITEM_NAME));
+            String shopName = data.getString(data.getColumnIndex(ItemContract.ItemEntry.COLUMN_SHOP_NAME));
+            float price = data.getFloat(data.getColumnIndex(ItemContract.ItemEntry.COLUMN_ITEM_PRICE));
+            Uri itemPhotoUri = Uri.parse(data.getString(data.getColumnIndex(ItemContract.ItemEntry.COLUMN_ITEM_PHOTO_URI)));
+            Uri itemReceiptPhotoUri = Uri.parse(data.getString(data.getColumnIndex(ItemContract.ItemEntry.COLUMN_ITEM_RECEIPT_PHOTO_URI)));
+            String boughtDate = data.getString(data.getColumnIndex(ItemContract.ItemEntry.COLUMN_BOUGHT_DATE));
+            int itemType = data.getInt(data.getColumnIndex(ItemContract.ItemEntry.COLUMN_ITEM_TYPE));
+            int warrantyDuration = data.getInt(data.getColumnIndex(ItemContract.ItemEntry.COLUMN_WARRANTY_DURATION));
+
+            //Set Item name field
+            EditText editText_itemName = (EditText) findViewById(R.id.edit_text_item_name);
+            editText_itemName.setText(itemName);
+
+            //Set Shop Name field
+            EditText editText_shopName = (EditText) findViewById(R.id.edit_text_shop_name);
+            editText_shopName.setText(shopName);
+
+            //GSet Item Price
+            EditText editText_itemPrice = (EditText) findViewById(R.id.edit_text_item_price);
+            editText_itemPrice.setText(String.valueOf(price));
+
+            //Set PHOTO URI
+            takenItemFileUri = itemPhotoUri;
+            btnShowItem.setVisibility(View.VISIBLE);
+            btnShowItem.setEnabled(true);
+
+            //SET RECEIPT URI
+            takenReceiptFileUri = itemReceiptPhotoUri;
+           btnShowReceipt.setVisibility(View.VISIBLE);
+            btnShowReceipt.setEnabled(true);
+
+            //SET Spinner Value
+            spinnerItemType.setSelection(itemType);
+
+            //Set bought date
+            EditText editText_boughtDate = (EditText) findViewById(R.id.edit_text_bought_date);
+            editText_boughtDate.setText(boughtDate);
+
+            //Set warranty duration
+            EditText editText_warrantyDuration = (EditText) findViewById(R.id.edit_text_warranty_duration);
+            editText_warrantyDuration.setText(String.valueOf(warrantyDuration));
+           }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        //Set Item name field
+        EditText editText_itemName = (EditText) findViewById(R.id.edit_text_item_name);
+        editText_itemName.setText("");
+
+        //Set Shop Name field
+        EditText editText_shopName = (EditText) findViewById(R.id.edit_text_shop_name);
+        editText_shopName.setText("");
+
+        //GSet Item Price
+        EditText editText_itemPrice = (EditText) findViewById(R.id.edit_text_item_price);
+        float value = (float) 0.0;
+        editText_itemPrice.setText(String.valueOf(value));
+
+        //Set PHOTO URI
+        takenItemFileUri = null;
+
+        //SET RECEIPT URI
+        takenReceiptFileUri = null;
+
+        //SET Spinner Value
+        spinnerItemType.setSelection(-1);
+
+        //Set bought date
+        EditText editText_boughtDate = (EditText) findViewById(R.id.edit_text_bought_date);
+        editText_boughtDate.setText("");
+
+        //Set warranty duration
+        EditText editText_warrantyDuration = (EditText) findViewById(R.id.edit_text_warranty_duration);
+        editText_warrantyDuration.setText("");
     }
 }
