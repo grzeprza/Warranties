@@ -24,4 +24,6 @@
     <string name="fe_bought_date">f.e. 10-12-2013</string>
     <string name="fe_warranty_duration">f.e. 4</string>
     <string name="no_added_items">No added items...</string>
+
+    <string name="interstitial_full_screen">ca-app-pub-9689655540012893/8634428961</string>
 </resources>

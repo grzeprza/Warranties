@@ -5,12 +5,9 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v4.app.LoaderManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -20,20 +17,16 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.bachelors.grzeprza.warranties.data.ItemContract;
 import com.bachelors.grzeprza.warranties.data.ItemContract.ItemTypes;
-import com.bachelors.grzeprza.warranties.data.ItemDbHelper;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -115,8 +108,6 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         }
         else this.setTitle("Add Item");
 
-        //TODO: implement behavior depending on source click [Edit] or [Add item]
-
         configureOptionSpinnerForItemtypes();
 
         configureDatePickerDialogForBoughtDate();
@@ -167,6 +158,7 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         });
 
         addToolbarAndConfigure();
+
 
         if(editMode) getLoaderManager().initLoader(SELECTED_ITEM_LOADER, null, this);
     }

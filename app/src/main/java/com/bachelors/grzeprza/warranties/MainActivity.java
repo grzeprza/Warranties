@@ -32,6 +32,9 @@ import com.bachelors.grzeprza.warranties.data.ItemContract;
 import com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry;
 import com.bachelors.grzeprza.warranties.data.ItemCursorAdapter;
 import com.bachelors.grzeprza.warranties.data.ItemDbHelper;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.InterstitialAd;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
@@ -57,6 +60,12 @@ public class MainActivity extends AppCompatActivity
     /**Instance of {@link ItemCursorAdapter}*/
     ItemCursorAdapter itemCursorAdapter;
 
+    /**AdMob full screen commercial*/
+    InterstitialAd mInterstitialAd;
+
+    /**Variable responsible for app flow before/after commercial appeared.*/
+    public static boolean loaded = false;
+
     /**Initializes whole world.*/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,13 +74,40 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        //Init AdMob FullScreen Commercial
+        mInterstitialAd = new InterstitialAd(this);
+        // set the ad unit ID
+        mInterstitialAd.setAdUnitId(getString(R.string.interstitial_full_screen));
+        mInterstitialAd.setAdListener(new AdListener() {
             @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), EditorActivity.class);
-                startActivity(intent);
+            public void onAdLoaded() {
+                loaded = true;
+                showInterstitial();
+                Toast.makeText(getApplicationContext(), "Click add", Toast.LENGTH_SHORT).show();
+            }
 
+            @Override
+            public void onAdClosed() {
+                if(loaded){
+                Intent intent = new Intent(getApplicationContext(), EditorActivity.class);
+                startActivity(intent);}
+               // Toast.makeText(getApplicationContext(), "Ad is closed!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onAdFailedToLoad(int errorCode) {
+                loaded = false;
+                Toast.makeText(getApplicationContext(), "Check internet!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onAdLeftApplication() {
+                //Toast.makeText(getApplicationContext(), "Ad left application!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onAdOpened() {
+                //Toast.makeText(getApplicationContext(), "Ad is opened!", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -92,7 +128,7 @@ public class MainActivity extends AppCompatActivity
         //Creates query to database to get all items
         Cursor itemCursor = getContentResolver().query(ItemEntry.CONTENT_URI,null,null,null,null);
         //gets list view to put items form query result
-        ListView itemListView = (ListView) findViewById(R.id.listView_items);
+        final ListView itemListView = (ListView) findViewById(R.id.listView_items);
         //gets view which is set when there is no data in the database
         RelativeLayout relativeLayout = (RelativeLayout) findViewById(R.id.empty_view);
         itemCursorAdapter = new ItemCursorAdapter(getApplicationContext(),itemCursor);
@@ -106,27 +142,11 @@ public class MainActivity extends AppCompatActivity
                 startActivity(displayItemInDetail);
             }
         });
-        itemListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+
+        itemListView.setOnItemLongClickListener(
+                new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                /*LayoutInflater layoutInflater = getLayoutInflater();
-                AlertDialog builder = new AlertDialog.Builder(getApplicationContext()).create();
-                builder.setMessage("Are you sure to you want to remove this item?");
-                builder.setCancelable(false);
-                builder.setButton(AlertDialog.BUTTON_POSITIVE,"YES!", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        getContentResolver().delete(CONTENT_URI,null,null);
-                        Toast.makeText(getApplicationContext(), "Item removed.",Toast.LENGTH_SHORT).show();
-                    }
-                });
-                builder.setButton(AlertDialog.BUTTON_NEGATIVE,"NO", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        //do nothing
-                    }
-                });
-                builder.show();*/
                 getContentResolver().delete(ContentUris.withAppendedId(CONTENT_URI,id),null,null);
                 Toast.makeText(MainActivity.this, "Item removed.", Toast.LENGTH_SHORT).show();
                 return false;
@@ -134,8 +154,41 @@ public class MainActivity extends AppCompatActivity
         });
         itemCursor.close();
 
+        //Floating button on the bottom right - f: adding new item
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(itemListView.getCount() >= 3)
+                {
+                    AdRequest adRequest = new AdRequest.Builder()
+                            //TODO: on production - comment addTestDevice
+                            .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                            .addTestDevice("40CE65C47616AFC7701238C8828E1E1F")
+                            //TODO: get last category from database
+                            //.addKeyword()
+                            .build();
+                    // Load ads into Interstitial Ads
+                    mInterstitialAd.loadAd(adRequest);
+
+                }
+                else {
+                    Intent intent = new Intent(getApplicationContext(), EditorActivity.class);
+                    startActivity(intent);
+                }
+            }
+        });
+
+
+
         getLoaderManager().initLoader(ITEM_LOADER, null, this);
 
+    }
+
+    private void showInterstitial() {
+        if (mInterstitialAd.isLoaded()) {
+            mInterstitialAd.show();
+        }
     }
 
     /**After returning to this activity*/

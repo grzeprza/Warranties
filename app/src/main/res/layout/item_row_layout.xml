@@ -5,10 +5,11 @@
 
     <ImageView
         android:id="@+id/ic_item"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="@mipmap/ic_launcher"
-        android:layout_margin="16dp"/>
+        android:layout_margin="16dp"
+        android:layout_alignParentStart="true"/>
 
     <TextView
         android:id="@+id/item_description"
