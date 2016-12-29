@@ -1,19 +1,16 @@
 package com.bachelors.grzeprza.warranties;
 
+import android.app.SearchManager;
+import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.CursorLoader;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.content.Loader;
-import android.support.v7.app.AlertDialog;
-import android.util.Log;
-import android.view.LayoutInflater;
+
+import android.view.MenuInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -24,14 +21,15 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
+import android.widget.FilterQueryProvider;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+import android.widget.SearchView;
 
 import com.bachelors.grzeprza.warranties.data.ItemContract;
 import com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry;
 import com.bachelors.grzeprza.warranties.data.ItemCursorAdapter;
-import com.bachelors.grzeprza.warranties.data.ItemDbHelper;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
@@ -43,10 +41,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import java.util.Random;
 
 import static com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry.CONTENT_URI;
-import static com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry.TABLE_NAME;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, android.app.LoaderManager.LoaderCallbacks<Cursor> {
+        implements NavigationView.OnNavigationItemSelectedListener, android.app.LoaderManager.LoaderCallbacks<Cursor>{
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -65,6 +62,13 @@ public class MainActivity extends AppCompatActivity
 
     /**Variable responsible for app flow before/after commercial appeared.*/
     public static boolean loaded = false;
+
+    /**Enables to use search at top bar*/
+    private SearchManager searchManager;
+
+    /**Reference to our item where we place query string*/
+    private SearchView searchView;
+    private MenuItem searchItem;
 
     /**Initializes whole world.*/
     @Override
@@ -179,12 +183,36 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-
-
+        searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
+        handleIntent(getIntent());
         getLoaderManager().initLoader(ITEM_LOADER, null, this);
 
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    protected  void handleIntent(Intent intent)
+    {
+        if(Intent.ACTION_SEARCH.equals(intent.getAction()))
+        {
+            String query = intent.getStringExtra(SearchManager.QUERY);
+            Cursor c = getItemsByCompanyOrDescr(query);
+            itemCursorAdapter.swapCursor(c);
+        }
+    }
+    /***/
+    private Cursor getItemsByCompanyOrDescr(String companyOrDescr)
+    {
+        String selection = ItemEntry.COLUMN_SHOP_NAME + " LIKE ? OR "+ ItemEntry.COLUMN_ITEM_NAME + " LIKE ? OR " + ItemEntry.COLUMN_ITEM_NAME + " LIKE ?";
+        String [] selectionArgs = new String[]{String.valueOf("%"+companyOrDescr+"%"),String.valueOf("%"+companyOrDescr+"%"),String.valueOf("%"+companyOrDescr+"%")};
+        return getContentResolver().query(ItemEntry.CONTENT_URI,null,selection,selectionArgs,null);
+    }
+
+    /**Methods displays commercial, when it is loaded*/
     private void showInterstitial() {
         if (mInterstitialAd.isLoaded()) {
             mInterstitialAd.show();
@@ -215,7 +243,42 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
+        MenuInflater inflater =getMenuInflater();
+                inflater.inflate(R.menu.main, menu);
+
+        searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
+        searchView = (SearchView) menu.findItem(R.id.action_search_main).getActionView();
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        searchView.setIconifiedByDefault(false);
+        searchView.clearFocus();
+        searchView.setSubmitButtonEnabled(true);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                itemCursorAdapter.changeCursor(getItemsByCompanyOrDescr(query));
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                itemCursorAdapter.changeCursor(getItemsByCompanyOrDescr(newText));
+                return false;
+            }
+        });
+      /*  searchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+            @Override
+            public boolean onSuggestionSelect(int position) {
+                Toast.makeText(getApplicationContext(),"SELECT",Toast.LENGTH_SHORT).show();
+                return true;
+            }
+
+            @Override
+            public boolean onSuggestionClick(int position) {
+                Toast.makeText(getApplicationContext(), "CLICK", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });*/
+
         return true;
     }
 
@@ -227,10 +290,11 @@ public class MainActivity extends AppCompatActivity
 
         switch (item.getItemId()) {
             case R.id.action_settings:
-                //goes directly to setting
+
                 return true;
 
             case R.id.action_search_main:
+                //onSearchRequested();
                 //looks for item in list
                 //for test purposes diplays number of rows in database
                 return true;
@@ -339,6 +403,4 @@ public class MainActivity extends AppCompatActivity
     public void onLoaderReset(android.content.Loader<Cursor> loader) {
         itemCursorAdapter.swapCursor(null);
     }
-
-
 }

@@ -26,4 +26,6 @@
     <string name="no_added_items">No added items...</string>
 
     <string name="interstitial_full_screen">ca-app-pub-9689655540012893/8634428961</string>
+    <string name="search_hint">f.e. Ikea</string>
+    <string name="search_title">Search</string>
 </resources>
