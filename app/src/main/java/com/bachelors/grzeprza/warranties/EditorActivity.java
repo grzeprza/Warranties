@@ -6,11 +6,11 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
@@ -29,13 +29,13 @@ import com.bachelors.grzeprza.warranties.data.ItemContract;
 import com.bachelors.grzeprza.warranties.data.ItemContract.ItemTypes;
 
 import java.io.File;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Random;
 
-import static com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry.CONTENT_URI;
+import static com.bachelors.grzeprza.warranties.notification.NotificationsManager.addNotification;
 
 public class EditorActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener, android.app.LoaderManager.LoaderCallbacks<Cursor>{
 
@@ -323,11 +323,16 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         String boughtDate = editText_boughtDate.getText().toString().trim();
         if(boughtDate.isEmpty()) return false;
 
+
         //Get warranty duration in weeks
         EditText editText_warrantyDuration = (EditText) findViewById(R.id.edit_text_warranty_duration);
         String warrantyDurationString = editText_warrantyDuration.getText().toString().trim();
         if(warrantyDurationString.isEmpty()) return false;
         int warrantyDuration = Integer.valueOf(warrantyDurationString);
+
+        int weeksLeft = countTimeLeft(boughtDate, warrantyDuration);
+
+
 
         ContentValues values = new ContentValues();
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_NAME,itemName);
@@ -339,14 +344,16 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_RECEIPT_PHOTO_URI,receiptPhotoUri);
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_TYPE, mItemType);
 
-
         if(!editMode) {
             //INSERT
             Uri addedRowId = getContentResolver().insert(ItemContract.ItemEntry.CONTENT_URI, values);
             if(addedRowId == null)
                 Toast.makeText(getApplicationContext(),"Failed to save, try again.",Toast.LENGTH_SHORT).show();
-            else
+            else {
                 Toast.makeText(getApplicationContext(),"Item saved",Toast.LENGTH_SHORT).show();
+
+                addNotification(getApplicationContext(), Integer.parseInt(addedRowId.getLastPathSegment().toString()), itemName, weeksLeft, takenItemFileUri);
+            }
 
         }
         else {
@@ -354,8 +361,11 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
             int updatedRowId = getContentResolver().update(SELECTED_ITEM_URI, values,null,null);
             if(updatedRowId == 0)
                 Toast.makeText(getApplicationContext(),"No rows updated",Toast.LENGTH_SHORT).show();
-            else
-                Toast.makeText(getApplicationContext(),"Item updated",Toast.LENGTH_SHORT).show();
+            else {
+                Toast.makeText(getApplicationContext(), "Item updated", Toast.LENGTH_SHORT).show();
+
+                addNotification(getApplicationContext(), Integer.parseInt(SELECTED_ITEM_URI.getLastPathSegment()), itemName, weeksLeft, takenItemFileUri);
+            }
         }
 
 
@@ -371,12 +381,19 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         editTextListenerForDatePicker = new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+
                 calendar.set(Calendar.YEAR, year);
                 calendar.set(Calendar.MONTH, month);
                 calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
 
                 //Formats date to f.e. 20-11-2016
                 simpleDateFormatter = new SimpleDateFormat("dd-MM-yyyy", Locale.UK);
+
+                //bought date cant be later than today
+                if (calendar.getTimeInMillis() > System.currentTimeMillis()) {
+                    Toast.makeText(EditorActivity.this, "Today is " + simpleDateFormatter.format(new Date(System.currentTimeMillis())), Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
                 editTextDatePickerDialog. setText(simpleDateFormatter.format(calendar.getTime()));
             }
@@ -394,6 +411,36 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
                 new DatePickerDialog(EditorActivity.this, editTextListenerForDatePicker, year, month, day).show();
             }
         });
+    }
+
+    /**
+     * Required to display appropriate notification with weeks left
+     */
+    private int countTimeLeft(String boughtDate, int duration) {
+        //System.out.println("============================ " + boughtDate + " " + duration);
+
+        calendar = Calendar.getInstance();
+        simpleDateFormatter = new SimpleDateFormat("dd-MM-yyyy", Locale.UK);
+        String todayDate = simpleDateFormatter.format(calendar.getTime());
+        //timeLeft = duration - (currentTime - boughtTime)
+        String timeLeftTillEnd = null;
+
+        Date boughtDateDate = null;
+        Date todayDateDate = null;
+        try {
+            boughtDateDate = simpleDateFormatter.parse(boughtDate);
+            todayDateDate = simpleDateFormatter.parse(todayDate);
+
+            // boughtDateDate = simpleDateFormatter.parse("10-01-2016");
+            // todayDateDate = simpleDateFormatter.parse("17-01-2016");
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        long finalTime = duration - (todayDateDate.getTime() - boughtDateDate.getTime()) / (1000 * 60 * 60 * 24 * 7);
+        timeLeftTillEnd = String.valueOf(finalTime);
+
+        return Integer.parseInt(timeLeftTillEnd);
     }
 
     /**Create Option Spinner for ItemTypes*/

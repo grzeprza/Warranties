@@ -1,7 +1,6 @@
 package com.bachelors.grzeprza.warranties;
 
 import android.app.SearchManager;
-import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -9,9 +8,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-
-import android.view.MenuInflater;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -19,17 +15,19 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.AdapterView;
-import android.widget.FilterQueryProvider;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 import android.widget.SearchView;
+import android.widget.Toast;
 
 import com.bachelors.grzeprza.warranties.data.ItemContract;
 import com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry;
 import com.bachelors.grzeprza.warranties.data.ItemCursorAdapter;
+import com.bachelors.grzeprza.warranties.notification.NotificationsManager;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
@@ -152,6 +150,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 getContentResolver().delete(ContentUris.withAppendedId(CONTENT_URI,id),null,null);
+                NotificationsManager.deleteNotification(getApplicationContext(), Integer.parseInt(Long.toString(id)));
                 Toast.makeText(MainActivity.this, "Item removed.", Toast.LENGTH_SHORT).show();
                 return false;
             }
