@@ -63,7 +63,7 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_CAPTURE_IMAGE_CODE = 100;
     /**Folder directory name where images will be saved*/
-    static final String IMAGE_DIRECTORY_NAME = "Warranties";
+    public static final String IMAGE_DIRECTORY_NAME = "Warranties";
 
     /**Variable is resposible for saying which image file will be used.
      *Variable is set when user clicks camera button to capture image.
@@ -215,7 +215,6 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         File mediaStorageDir = new File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
                 IMAGE_DIRECTORY_NAME);
-
         // Create the storage directory if it does not exist
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
@@ -331,8 +330,6 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         int warrantyDuration = Integer.valueOf(warrantyDurationString);
 
         int weeksLeft = countTimeLeft(boughtDate, warrantyDuration);
-
-
 
         ContentValues values = new ContentValues();
         values.put(ItemContract.ItemEntry.COLUMN_ITEM_NAME,itemName);
@@ -574,4 +571,6 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
         EditText editText_warrantyDuration = (EditText) findViewById(R.id.edit_text_warranty_duration);
         editText_warrantyDuration.setText("");
     }
+
+
 }

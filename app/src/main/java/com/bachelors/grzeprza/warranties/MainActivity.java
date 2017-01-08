@@ -1,18 +1,18 @@
 package com.bachelors.grzeprza.warranties;
 
+import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -31,32 +31,25 @@ import com.bachelors.grzeprza.warranties.notification.NotificationsManager;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.appindexing.Thing;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.drive.Drive;
 
+import java.io.IOException;
 import java.util.Random;
 
 import static com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry.CONTENT_URI;
+import static com.bachelors.grzeprza.warranties.data.ItemDbHelper.DATABASE_NAME;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends GoogleDriveActivity
         implements NavigationView.OnNavigationItemSelectedListener, android.app.LoaderManager.LoaderCallbacks<Cursor>{
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
-
-    /**Identifies loader being used to load items into listView rows*/
+      /**Identifies loader being used to load items into listView rows*/
     private static final int ITEM_LOADER = 0;
 
     /**Instance of {@link ItemCursorAdapter}*/
-    ItemCursorAdapter itemCursorAdapter;
+    private ItemCursorAdapter itemCursorAdapter;
 
     /**AdMob full screen commercial*/
-    InterstitialAd mInterstitialAd;
+    private InterstitialAd mInterstitialAd;
 
     /**Variable responsible for app flow before/after commercial appeared.*/
     public static boolean loaded = false;
@@ -66,7 +59,6 @@ public class MainActivity extends AppCompatActivity
 
     /**Reference to our item where we place query string*/
     private SearchView searchView;
-    private MenuItem searchItem;
 
     /**Initializes whole world.*/
     @Override
@@ -121,11 +113,6 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         //Creates query to database to get all items
         Cursor itemCursor = getContentResolver().query(ItemEntry.CONTENT_URI,null,null,null,null);
@@ -218,17 +205,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    /**After returning to this activity*/
-    @Override
-    protected void onStart() {
-        super.onStart();// ATTENTION: This was auto-generated to implement the App Indexing API.
-// See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.connect();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        AppIndex.AppIndexApi.start(client, getIndexApiAction());
-    }
-
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -281,6 +257,7 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    /**Describes actions on pressing button in app menu*/
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -293,9 +270,15 @@ public class MainActivity extends AppCompatActivity
                 return true;
 
             case R.id.action_search_main:
-                //onSearchRequested();
-                //looks for item in list
-                //for test purposes diplays number of rows in database
+                return true;
+
+            case R.id.action_export:
+                new AsyncTaskSaveDataToGoogleDrive().execute();
+                return true;
+
+            case R.id.action_import:
+                new AsyncTaskReadDataFromGoogleDrive().execute();
+
                 return true;
 
             case R.id.action_insert_dummy_data:
@@ -353,32 +336,6 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    public Action getIndexApiAction() {
-        Thing object = new Thing.Builder()
-                .setName("Main Page") // TODO: Define a title for the content shown.
-                // TODO: Make sure this auto-generated URL is correct.
-                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
-                .build();
-        return new Action.Builder(Action.TYPE_VIEW)
-                .setObject(object)
-                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
-                .build();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        AppIndex.AppIndexApi.end(client, getIndexApiAction());
-        client.disconnect();
-    }
-
     /**Describes what query has to be done at the LoaderManager call*/
     @Override
     public android.content.Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -402,4 +359,107 @@ public class MainActivity extends AppCompatActivity
     public void onLoaderReset(android.content.Loader<Cursor> loader) {
         itemCursorAdapter.swapCursor(null);
     }
+
+    /**Information progress dialog informing about importing/exporting database*/
+    private ProgressDialog pDialog;
+
+    /**Inner class to Import data from GoogleDrive. Working in separate thread.*/
+    class AsyncTaskSaveDataToGoogleDrive extends AsyncTask<Void,Void,Void>
+    {
+        /**
+         * Before starting background thread
+         * */
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            System.out.println("Starting download");
+
+            pDialog = new ProgressDialog(MainActivity.this);
+            pDialog.setMessage("Loading... Please wait...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        /**
+         * Downloading file in background thread
+         * */
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                saveToGoogleDrive(
+                        Drive.DriveApi.getAppFolder(getGoogleApiClient()),
+                        DATABASE_NAME,
+                        "text/plain",
+                        exportDBtoText());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+        }
+
+        /**
+         * After completing background task
+         * **/
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            pDialog.dismiss();
+            super.onPostExecute(aVoid);
+        }
+
+
+    }
+
+    /**Inner class to Import data from GoogleDrive. Working in separate thread.*/
+    class AsyncTaskReadDataFromGoogleDrive extends AsyncTask<Void,Void,Void>
+    {
+
+        /**
+         * Before starting background thread
+         * */
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            System.out.println("Starting download");
+
+            pDialog = new ProgressDialog(MainActivity.this);
+            pDialog.setMessage("Loading... Please wait...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        /**
+         * Downloading file in background thread
+         * */
+        @Override
+        protected Void doInBackground(Void... params) {
+            readDataFromGoogleDrive();
+            return null;
+        }
+
+
+        @Override
+        protected void onCancelled() {
+
+            super.onCancelled();
+        }
+
+        /**
+         * After completing background task
+         * **/
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            pDialog.dismiss();
+            super.onPostExecute(aVoid);
+        }
+    }
+
 }

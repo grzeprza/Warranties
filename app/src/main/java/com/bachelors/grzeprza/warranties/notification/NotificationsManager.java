@@ -18,7 +18,7 @@ import static com.bachelors.grzeprza.warranties.data.ItemContract.ItemEntry.CONT
  */
 
 /**
- * Gathers method to manage notification in app, as well as stores constant variables for easier usage.
+ * Gathers method to manage notifications in app, as well as stores constant variables for easier usage.
  */
 public class NotificationsManager {
 

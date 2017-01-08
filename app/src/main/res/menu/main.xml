@@ -11,11 +11,22 @@
         />
 
     <item
+        android:id="@+id/action_export"
+        android:orderInCategory="100"
+        android:title="Export"/>
+
+
+    <item
+        android:id="@+id/action_import"
+        android:orderInCategory="100"
+        android:title="Import"/>
+
+    <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
         android:title="@string/action_settings"
         app:showAsAction="never" />
-    <item
+   <!-- <item
         android:id="@+id/action_insert_dummy_data"
         android:orderInCategory="100"
         android:title="Insert Dummy Data"
@@ -23,6 +34,6 @@
     <item
         android:id="@+id/action_delete_data"
         android:orderInCategory="100"
-        android:title="Delete Data"
+        android:title="Delete Data"-->
         />
 </menu>
