@@ -64,7 +64,6 @@ public class ItemProvider extends ContentProvider {
         switch (match)
         {
             case ITEMS:
-                Log.e(LOG_TAG,"HELLO FROM HERE");
                 cursor = db.query(ItemContract.ItemEntry.TABLE_NAME, projection,selection,selectionArgs,null,null,sortOrder);
                 break;
 

@@ -349,7 +349,7 @@ public class EditorActivity extends AppCompatActivity implements AdapterView.OnI
             else {
                 Toast.makeText(getApplicationContext(),"Item saved",Toast.LENGTH_SHORT).show();
 
-                addNotification(getApplicationContext(), Integer.parseInt(addedRowId.getLastPathSegment().toString()), itemName, weeksLeft, takenItemFileUri);
+                addNotification(getApplicationContext(), Integer.parseInt(addedRowId.getLastPathSegment()), itemName, weeksLeft, takenItemFileUri);
             }
 
         }

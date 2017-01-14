@@ -6,6 +6,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -44,33 +45,29 @@ public class NotificationsManager {
      * Enables easy interface to add new Notification. Notification is added after insert and update.
      */
     public static void addNotification(Context context, int id, String itemName, int timeTillEnd_Weeks, Uri imageUri) {
+
         Calendar cal = Calendar.getInstance();
-        Date date = new Date(System.currentTimeMillis());
-        //System.out.println(cal.getTime());
+        cal.setTimeInMillis(System.currentTimeMillis());
 
-        cal.set(Calendar.YEAR, date.getYear());
-        cal.set(Calendar.MONTH, date.getMonth());
-        cal.set(Calendar.DAY_OF_MONTH, date.getDay());
-        cal.set(Calendar.HOUR_OF_DAY, 7);
-        cal.set(Calendar.MINUTE, 00);
-        cal.set(Calendar.SECOND, 00);
-
+        Log.e("NOTIFY", "Dziś: "+cal.getTime().toString());
         if (timeTillEnd_Weeks > 0)
-            cal.add(Calendar.DAY_OF_YEAR, (timeTillEnd_Weeks * 7) - 14);
-
-        Intent resultIntent = new Intent(context, Receiver.class); //change to Receiver to Editor in Warranties
+            cal.add(Calendar.DAY_OF_YEAR, (timeTillEnd_Weeks * 7) - 7);
+        Log.e("NOTIFY", "Warranty timeleft: " + String.valueOf(timeTillEnd_Weeks));
+        Log.e("NOTIFY", "Alarm set to: "+cal.getTime().toString());
+        Intent resultIntent = new Intent(context, Receiver.class);
         resultIntent.putExtra(ID, id);
         resultIntent.putExtra(ITEM_NAME, itemName);
         resultIntent.putExtra(TIME_TILL_END, timeTillEnd_Weeks);
         resultIntent.setData(ContentUris.withAppendedId(CONTENT_URI, id));
         PendingIntent rePendingIntent = PendingIntent.getBroadcast(context, id, resultIntent, 0);
 
-        // System.out.println(cal.getTime());
-
-        //Sets alarm notification on two weeks before deadline
-        AlarmManager alarmManager = (AlarmManager) context.getSystemService(ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), rePendingIntent); //working just set calendar
-        //alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,1000*60*1,rePendingIntent); //gives notification right now
+        if(timeTillEnd_Weeks >= 0)
+        {
+            //Sets alarm notification on week before deadline
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(ALARM_SERVICE);
+            alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), rePendingIntent); //working just set calendar
+            //alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,1000*60*1,rePendingIntent); //gives notification right now
+        }
     }
 
     /**

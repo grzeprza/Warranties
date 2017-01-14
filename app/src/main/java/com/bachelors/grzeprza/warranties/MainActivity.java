@@ -153,8 +153,8 @@ public class MainActivity extends GoogleDriveActivity
                 {
                     AdRequest adRequest = new AdRequest.Builder()
                             //TODO: on production - comment addTestDevice
-                            .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-                            .addTestDevice("40CE65C47616AFC7701238C8828E1E1F")
+                            //.addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                            //.addTestDevice("40CE65C47616AFC7701238C8828E1E1F")
                             //TODO: get last category from database
                             //.addKeyword()
                             .build();
@@ -280,7 +280,7 @@ public class MainActivity extends GoogleDriveActivity
                 new AsyncTaskReadDataFromGoogleDrive().execute();
 
                 return true;
-
+/*
             case R.id.action_insert_dummy_data:
 
                 Random random = new Random();
@@ -304,7 +304,7 @@ public class MainActivity extends GoogleDriveActivity
             case R.id.action_delete_data:
                 getContentResolver().delete(CONTENT_URI,null,null);
                 return true;
-
+*/
             default:
                 return super.onOptionsItemSelected(item);
         }

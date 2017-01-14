@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import android.provider.MediaStore;
 import android.support.v4.graphics.BitmapCompat;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -76,8 +77,6 @@ public class ItemCursorAdapter extends CursorAdapter {
 
     private String countTimeLeft(String boughtDate, int duration)
     {
-        System.out.println("============================ " + boughtDate + " " + duration);
-
         calendar = Calendar.getInstance();
         simpleDateFormatter = new SimpleDateFormat("dd-MM-yyyy", Locale.UK);
         String todayDate = simpleDateFormatter.format(calendar.getTime());
